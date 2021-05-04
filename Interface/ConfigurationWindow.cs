@@ -14,7 +14,6 @@ namespace SideHUDPlugin.Interface
 	public class ConfigurationWindow
 	{
 		public bool IsVisible = false;
-		public bool IsDrawn = false;
 		private bool _showStyles = false;
 		private bool _showUserPath = false;
 
