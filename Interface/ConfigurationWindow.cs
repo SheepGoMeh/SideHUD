@@ -213,7 +213,7 @@ namespace SideHUDPlugin.Interface
 							ImGui.Separator();
 							ImGui.Columns(3);
 
-							foreach (var entry in _plugin.Styles)
+							foreach (var entry in _plugin.UserStyles)
 							{
 								DrawPreview(entry, true);
 							}
