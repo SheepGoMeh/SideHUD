@@ -91,6 +91,8 @@ namespace SideHUDPlugin.Interface
 
 				if (ImGui.Button("Reload user styles"))
 				{
+					_showStyles = false;
+					_showUserPath = false;
 					_plugin.ReloadUserStyles();
 				}
 
