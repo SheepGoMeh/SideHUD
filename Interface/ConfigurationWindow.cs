@@ -208,7 +208,10 @@ namespace SideHUDPlugin.Interface
 
 						if (_plugin.UserStyles.Count > 0)
 						{
+							ImGui.Columns(1);
 							ImGui.Text("User styles");
+							ImGui.Separator();
+							ImGui.Columns(3);
 
 							foreach (var entry in _plugin.Styles)
 							{
