@@ -160,18 +160,26 @@ namespace SideHUDPlugin
 
 		public void ReloadUserStyles()
 		{
-			var nameList = UserStyles.Keys.ToList();
-
 			foreach (var image in UserStyles.SelectMany(style => style.Value))
 			{
 				image?.Dispose();
 			}
 			
 			UserStyles.Clear();
-
-			foreach (var name in nameList)
+			
+			if (!string.IsNullOrEmpty(_pluginConfiguration.UserStylePath))
 			{
-				LoadStyle(name, _pluginConfiguration.UserStylePath, true);
+				if (!Directory.Exists(_pluginConfiguration.UserStylePath))
+				{
+					PluginLog.Error($"{_pluginConfiguration.UserStylePath} was not found.");
+				}
+				else
+				{
+					foreach (var item in Directory.GetDirectories(_pluginConfiguration.UserStylePath))
+					{
+						LoadStyle(item, _pluginConfiguration.UserStylePath, true);
+					}
+				}
 			}
 		}
 
