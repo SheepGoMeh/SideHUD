@@ -28,6 +28,8 @@ namespace SideHUDPlugin.Interface
 			_plugin = plugin;
 			_pluginInterface = pluginInterface;
 			_pluginConfiguration = pluginConfiguration;
+
+			Array.Copy(pathBuffer, Encoding.UTF8.GetBytes(_pluginConfiguration.UserStylePath), _pluginConfiguration.UserStylePath.Length);
 		}
 
 		public void Draw()
@@ -107,7 +109,7 @@ namespace SideHUDPlugin.Interface
 
 						if (ImGui.Button("Save"))
 						{
-							_pluginConfiguration.UserStylePath = Encoding.UTF8.GetString(pathBuffer);
+							_pluginConfiguration.UserStylePath = Encoding.UTF8.GetString(pathBuffer).Replace("\0", "");
 							_pluginConfiguration.Save();
 							_showUserPath = false;
 						}
