@@ -137,7 +137,7 @@ namespace SideHUDPlugin.Interface
 							var item = entry.Key;
 							var images = entry.Value;
 
-							if (ImGui.Selectable(item))
+							if (ImGui.Selectable(isUserStyle ? Path.GetFileName(item) : item))
 							{
 								_pluginConfiguration.IsUserStyle = isUserStyle;
 								_pluginConfiguration.SelectedStyle = item;
