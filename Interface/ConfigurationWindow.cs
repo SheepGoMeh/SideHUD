@@ -46,6 +46,7 @@ namespace SideHUDPlugin.Interface
 				var changed = false;
 
 				changed |= ImGui.Checkbox("Hide HUD", ref _pluginConfiguration.HideHud);
+				changed |= ImGui.Checkbox("Show numbers", ref _pluginConfiguration.ShowNumbers);
 				changed |= ImGui.Checkbox("Show percentages", ref _pluginConfiguration.ShowPercentage);
 				changed |= ImGui.Checkbox("Enable slidecast", ref _pluginConfiguration.ShowSlidecast);
 				changed |= ImGui.Checkbox("Only show in combat", ref _pluginConfiguration.HideCombat);

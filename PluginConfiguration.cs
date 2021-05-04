@@ -29,6 +29,7 @@ namespace SideHUDPlugin
 		public bool CastTimeUp = false;
 		public bool FlipCastBar = false;
 		public bool IsUserStyle = false;
+		public bool ShowNumbers = true;
 		public bool ShowSlidecast = false;
 		public bool ShowPercentage = false;
 		public float Scale = 1f;

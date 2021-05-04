@@ -294,37 +294,60 @@ namespace SideHUDPlugin.Interface
 				}
 			}
 
-			ImGui.SetCursorPos(new Vector2(cursorPos.X, cursorY));
-
-			Vector2 hpTextPos;
-			Vector2 resourceTextPos;
-
-			if (_pluginConfiguration.FlipBars)
+			if (_pluginConfiguration.ShowPercentage || _pluginConfiguration.ShowNumbers)
 			{
-				hpTextPos = new Vector2(cursorPos.X + _pluginConfiguration.BarGap * _pluginConfiguration.Scale,
-					ImGui.GetCursorPosY());
-				resourceTextPos =
-					new Vector2(
-						cursorPos.X - ImGui.CalcTextSize(resourceValue.ToString()).X -
+				ImGui.SetCursorPos(new Vector2(cursorPos.X, cursorY));
+
+				Vector2 hpTextPos;
+				Vector2 resourceTextPos;
+				
+				var hpText = String.Empty;
+				var resourceText = string.Empty;
+				
+				var hpPercent = hpScale * 100f;
+				var resourcePercent = resourceScale * 100f;
+
+				switch (_pluginConfiguration.ShowNumbers)
+				{
+					case true when _pluginConfiguration.ShowPercentage:
+						hpText = $"{actor.CurrentHp}\n({hpPercent:F0}%%)";
+						resourceText = $"{resourceValue}\n({resourcePercent:F0}%%)";
+						break;
+					case true:
+						hpText = $"{actor.CurrentHp}";
+						resourceText = $"{resourceValue}";
+						break;
+					default:
+						hpText = $"({hpPercent:F0}%%)";
+						resourceText = $"({resourcePercent:F0}%%)";
+						break;
+				}
+
+				if (_pluginConfiguration.FlipBars)
+				{
+					hpTextPos = new Vector2(cursorPos.X + _pluginConfiguration.BarGap * _pluginConfiguration.Scale,
+						ImGui.GetCursorPosY());
+					resourceTextPos =
+						new Vector2(
+							cursorPos.X - ImGui.CalcTextSize(resourceValue.ToString()).X -
+							_pluginConfiguration.BarGap * _pluginConfiguration.Scale, ImGui.GetCursorPosY());
+				}
+				else
+				{
+					hpTextPos = new Vector2(
+						cursorPos.X - ImGui.CalcTextSize(actor.CurrentHp.ToString()).X -
 						_pluginConfiguration.BarGap * _pluginConfiguration.Scale, ImGui.GetCursorPosY());
+					resourceTextPos = new Vector2(
+						cursorPos.X + _pluginConfiguration.BarGap * _pluginConfiguration.Scale,
+						ImGui.GetCursorPosY());
+				}
+
+				DrawOutlineText(hpTextPos.X, hpTextPos.Y, _pluginConfiguration.HpColorAlpha,
+					_pluginConfiguration.OutlineColorAlpha, hpText, 2);
+
+				DrawOutlineText(resourceTextPos.X, resourceTextPos.Y, resourceColor,
+					_pluginConfiguration.OutlineColorAlpha, resourceText, 2);
 			}
-			else
-			{
-				hpTextPos = new Vector2(
-					cursorPos.X - ImGui.CalcTextSize(actor.CurrentHp.ToString()).X -
-					_pluginConfiguration.BarGap * _pluginConfiguration.Scale, ImGui.GetCursorPosY());
-				resourceTextPos = new Vector2(cursorPos.X + _pluginConfiguration.BarGap * _pluginConfiguration.Scale,
-					ImGui.GetCursorPosY());
-			}
-
-			var hpPercent = hpScale * 100f;
-			var resourcePercent = resourceScale * 100f;
-
-			DrawOutlineText(hpTextPos.X, hpTextPos.Y, _pluginConfiguration.HpColorAlpha, _pluginConfiguration.OutlineColorAlpha,
-				actor.CurrentHp + (_pluginConfiguration.ShowPercentage ? $"\n({hpPercent:F0}%%)" : ""), 2);
-
-			DrawOutlineText(resourceTextPos.X, resourceTextPos.Y, resourceColor, _pluginConfiguration.OutlineColorAlpha,
-				resourceValue + (_pluginConfiguration.ShowPercentage ? $"\n({resourcePercent:F0} %%)" : ""), 2);
 
 			ImGui.End();
 		}
