@@ -71,6 +71,13 @@ namespace SideHUDPlugin
 				}
 			}
 
+			if (_pluginConfiguration.IsUserStyle && !UserStyles.ContainsKey(_pluginConfiguration.SelectedStyle))
+			{
+				_pluginConfiguration.IsUserStyle = false;
+				_pluginConfiguration.SelectedStyle = items[0];
+				_pluginConfiguration.Save();
+			}
+
 			if (_pluginConfiguration.IsUserStyle)
 			{
 				_pluginConfiguration.BarImage = UserStyles[_pluginConfiguration.SelectedStyle][0];
