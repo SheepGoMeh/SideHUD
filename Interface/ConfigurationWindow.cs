@@ -70,6 +70,7 @@ namespace SideHUDPlugin.Interface
 				changed |= ImGui.ColorEdit3("CP Color", ref _pluginConfiguration.CpColor);
 				changed |= ImGui.ColorEdit3("GP Color", ref _pluginConfiguration.GpColor);
 				changed |= ImGui.ColorEdit3("Cast Color", ref _pluginConfiguration.CastColor);
+				changed |= ImGui.ColorEdit3("Shield Color", ref _pluginConfiguration.ShieldColor);
 				changed |= ImGui.ColorEdit3("Slidecast Color", ref _pluginConfiguration.SlidecastColor);
 				changed |= ImGui.ColorEdit3("Cast Interrupted Color", ref _pluginConfiguration.CastInterruptColor);
 				changed |= ImGui.ColorEdit3("Text Outline Color", ref _pluginConfiguration.OutlineColor);

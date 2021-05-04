@@ -18,6 +18,7 @@ namespace SideHUDPlugin
 		[JsonIgnore] public Vector4 CpColorAlpha => new Vector4(CpColor, Transparency / 100f);
 		[JsonIgnore] public Vector4 GpColorAlpha => new Vector4(GpColor, Transparency / 100f);
 		[JsonIgnore] public Vector4 CastColorAlpha => new Vector4(CastColor, Transparency / 100f);
+		[JsonIgnore] public Vector4 ShieldColorAlpha => new Vector4(ShieldColor, Transparency / 100f);
 		[JsonIgnore] public Vector4 OutlineColorAlpha => new Vector4(OutlineColor, Transparency / 100f);
 		[JsonIgnore] public Vector4 SlidecastColorAlpha => new Vector4(SlidecastColor, Transparency / 100f);
 		[JsonIgnore] public Vector4 CastInterruptColorAlpha => new Vector4(CastInterruptColor, Transparency / 100f);
@@ -45,6 +46,7 @@ namespace SideHUDPlugin
 		public Vector3 CpColor = new Vector3(0.466f, 0.215f, 0.592f);
 		public Vector3 GpColor = new Vector3(0.172f, 0.443f, 0.584f);
 		public Vector3 CastColor = new Vector3(0.878f, 0.847f, 0.796f);
+		public Vector3 ShieldColor = new Vector3(0.172f, 0.443f, 0.584f);
 		public Vector3 OutlineColor = new Vector3(0f, 0f, 0f);
 		public Vector3 SlidecastColor = new Vector3(0.215f, 0.980f, 0.180f);
 		public Vector3 CastInterruptColor = new Vector3(0.215f, 0.980f, 0.180f);

@@ -177,6 +177,33 @@ namespace SideHUDPlugin.Interface
 					_pluginConfiguration.BarCastBackgroundImage.Height * _pluginConfiguration.Scale),
 				Vector2.Zero,
 				Vector2.One, _pluginConfiguration.BgColorAlpha);
+
+			var cursorY = ImGui.GetCursorPosY();
+			var shieldScale = *(int*) (actor.Address + 0x1997) / 100f;
+
+			if (_pluginConfiguration.FlipCastBar)
+			{
+				// Shield
+				ImGui.SetCursorPos(new Vector2(
+					cursorPos.X + _pluginConfiguration.BarGap * _pluginConfiguration.Scale, cursorPos.Y));
+
+				ImGui.Image(_pluginConfiguration.BarCastImage.ImGuiHandle,
+					new Vector2(_pluginConfiguration.BarCastImage.Width * _pluginConfiguration.Scale,
+						_pluginConfiguration.BarCastImage.Height * shieldScale * _pluginConfiguration.Scale),
+					Vector2.Zero, new Vector2(1f, shieldScale),
+					_pluginConfiguration.ShieldColorAlpha);
+			}
+			else
+			{
+				// Shield
+				ImGui.SetCursorPos(new Vector2(cursorPos.X - imageWidth, cursorPos.Y));
+
+				ImGui.Image(_pluginConfiguration.BarCastImage.ImGuiHandle,
+					new Vector2(_pluginConfiguration.BarCastImage.Width * _pluginConfiguration.Scale,
+						_pluginConfiguration.BarCastImage.Height * shieldScale * _pluginConfiguration.Scale),
+					Vector2.One, new Vector2(0f, 1f + shieldScale),
+					_pluginConfiguration.ShieldColorAlpha);
+			}
 			
 			// Cast bar
 
@@ -206,8 +233,6 @@ namespace SideHUDPlugin.Interface
 					}
 				}
 
-				float cursorY;
-
 				if (_pluginConfiguration.FlipCastBar)
 				{
 					DrawOutlineText(
@@ -225,8 +250,6 @@ namespace SideHUDPlugin.Interface
 							? _pluginConfiguration.CastInterruptColorAlpha
 							: _pluginConfiguration.CastColorAlpha);
 
-					cursorY = ImGui.GetCursorPosY();
-					
 					// Slidecast
 					if (_pluginConfiguration.ShowSlidecast)
 					{
@@ -256,8 +279,6 @@ namespace SideHUDPlugin.Interface
 							? _pluginConfiguration.CastInterruptColorAlpha
 							: _pluginConfiguration.CastColorAlpha);
 
-					cursorY = ImGui.GetCursorPosY();
-
 					// Slidecast
 					if (_pluginConfiguration.ShowSlidecast)
 					{
@@ -271,9 +292,9 @@ namespace SideHUDPlugin.Interface
 							_pluginConfiguration.SlidecastColorAlpha);
 					}
 				}
-
-				ImGui.SetCursorPos(new Vector2(cursorPos.X, cursorY));
 			}
+
+			ImGui.SetCursorPos(new Vector2(cursorPos.X, cursorY));
 
 			Vector2 hpTextPos;
 			Vector2 resourceTextPos;
