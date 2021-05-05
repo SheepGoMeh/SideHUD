@@ -4,6 +4,7 @@ using System.Numerics;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using Dalamud.Game.ClientState;
+using Dalamud.Interface;
 using Dalamud.Plugin;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
@@ -72,6 +73,7 @@ namespace SideHUDPlugin.Interface
 			}
 
 			var viewportSize = ImGui.GetMainViewport().Size;
+			ImGuiHelpers.ForceNextWindowMainViewport();
 			ImGui.SetNextWindowPos(Vector2.Zero);
 			ImGui.SetNextWindowSize(viewportSize);
 			if (!ImGui.Begin("Side HUD",
