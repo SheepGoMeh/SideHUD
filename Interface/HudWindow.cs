@@ -189,7 +189,7 @@ namespace SideHUDPlugin.Interface
 
 
 			var cursorY = ImGui.GetCursorPosY();
-			var shieldScale = *(int*) (actor.Address + 0x1997) / 100f;
+			var shieldScale = Math.Min(*(int*) (actor.Address + 0x1997), 100) / 100f;
 
 			// Shield
 			DrawCastBar(cursorPos,
