@@ -272,7 +272,7 @@ namespace SideHUDPlugin.Interface
 				Vector2 hpTextPos;
 				Vector2 resourceTextPos;
 
-				var hpText = String.Empty;
+				var hpText = string.Empty;
 				var resourceText = string.Empty;
 
 				var hpPercent = hpScale * 100f;
