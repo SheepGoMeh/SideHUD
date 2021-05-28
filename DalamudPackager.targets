@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project>
+    <Target Name="PackagePlugin" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
+        <DalamudPackager
+                ProjectDir="$(ProjectDir)"
+                OutputPath="$(OutputPath)"
+                AssemblyName="$(AssemblyName)"
+                MakeZip="true"
+                Include="
+                SideHUDPlugin.dll;
+                Styles/CleanCurves/Bar.png;
+                Styles/CleanCurves/BarBG.png;
+                Styles/CleanCurves/Cast.png;
+                Styles/CleanCurves/CastBG.png;
+                Styles/GlowArc/Bar.png;
+                Styles/GlowArc/BarBG.png;
+                Styles/GlowArc/Cast.png;
+                Styles/GlowArc/CastBG.png;
+                Styles/RivetBar/Bar.png;
+                Styles/RivetBar/BarBG.png;
+                Styles/RivetBar/Cast.png;
+                Styles/RivetBar/CastBG.png"/>
+    </Target>
+</Project>
