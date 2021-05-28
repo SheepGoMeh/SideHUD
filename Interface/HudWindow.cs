@@ -230,8 +230,8 @@ namespace SideHUDPlugin.Interface
 				{
 					DrawOutlineText(
 						cursorPos.X - castStringSize.X / 2 - _pluginConfiguration.BarGap * _pluginConfiguration.Scale,
-						cursorPos.Y - castStringSize.Y, _pluginConfiguration.CastColorAlpha,
-						_pluginConfiguration.OutlineColorAlpha, castString, 2);
+						cursorPos.Y - castStringSize.Y, _pluginConfiguration.CastTextColorAlpha,
+						_pluginConfiguration.CastTextOutlineColorAlpha, castString, 2);
 
 					DrawCastBar(cursorPos, imageWidth, castScale,
 						interrupted
@@ -248,8 +248,8 @@ namespace SideHUDPlugin.Interface
 				else
 				{
 					DrawOutlineText(cursorPos.X + _pluginConfiguration.BarGap * _pluginConfiguration.Scale,
-						cursorPos.Y - castStringSize.Y, _pluginConfiguration.CastColorAlpha,
-						_pluginConfiguration.OutlineColorAlpha, castString, 2);
+						cursorPos.Y - castStringSize.Y, _pluginConfiguration.CastTextColorAlpha,
+						_pluginConfiguration.CastTextOutlineColorAlpha, castString, 2);
 
 					DrawCastBar(cursorPos, _pluginConfiguration.BarGap * _pluginConfiguration.Scale, castScale,
 						interrupted
@@ -313,11 +313,11 @@ namespace SideHUDPlugin.Interface
 						ImGui.GetCursorPosY());
 				}
 
-				DrawOutlineText(hpTextPos.X, hpTextPos.Y, _pluginConfiguration.HpColorAlpha,
-					_pluginConfiguration.OutlineColorAlpha, hpText, 2);
+				DrawOutlineText(hpTextPos.X, hpTextPos.Y, _pluginConfiguration.HpTextColorAlpha,
+					_pluginConfiguration.HpTextOutlineColorAlpha, hpText, 2);
 
-				DrawOutlineText(resourceTextPos.X, resourceTextPos.Y, resourceColor,
-					_pluginConfiguration.OutlineColorAlpha, resourceText, 2);
+				DrawOutlineText(resourceTextPos.X, resourceTextPos.Y, _pluginConfiguration.ResourceTextColorAlpha,
+					_pluginConfiguration.ResourceTextOutlineColorAlpha, resourceText, 2);
 			}
 
 			ImGui.End();

@@ -74,7 +74,14 @@ namespace SideHUDPlugin.Interface
 				changed |= ImGui.ColorEdit3("Shield Color", ref _pluginConfiguration.ShieldColor);
 				changed |= ImGui.ColorEdit3("Slidecast Color", ref _pluginConfiguration.SlidecastColor);
 				changed |= ImGui.ColorEdit3("Cast Interrupted Color", ref _pluginConfiguration.CastInterruptColor);
-				changed |= ImGui.ColorEdit3("Text Outline Color", ref _pluginConfiguration.OutlineColor);
+				changed |= ImGui.ColorEdit3("HP Text Color", ref _pluginConfiguration.HpTextColor);
+				changed |= ImGui.ColorEdit3("Resource Text Color", ref _pluginConfiguration.ResourceTextColor);
+				changed |= ImGui.ColorEdit3("Cast Text Color", ref _pluginConfiguration.CastTextColor);
+				changed |= ImGui.ColorEdit3("Cast Interrupted Text Color", ref _pluginConfiguration.CastInterruptedTextColor);
+				changed |= ImGui.ColorEdit3("HP Text Outline Color", ref _pluginConfiguration.HpTextOutlineColor);
+				changed |= ImGui.ColorEdit3("Resource Text Outline Color", ref _pluginConfiguration.ResourceTextOutlineColor);
+				changed |= ImGui.ColorEdit3("Cast Text Outline Color", ref _pluginConfiguration.CastTextOutlineColor);
+				changed |= ImGui.ColorEdit3("Cast Interrupted Text Outline Color", ref _pluginConfiguration.CastInterruptedTextOutlineColor);
 
 				if (ImGui.Button("Change style"))
 				{
