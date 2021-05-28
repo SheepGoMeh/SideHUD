@@ -25,7 +25,8 @@ namespace SideHUDPlugin.Interface
 			_pluginConfiguration = pluginConfiguration;
 		}
 
-		private static void DrawOutlineText(float x, float y, Vector4 color, Vector4 outlineColor, string text, int thickness)
+		private static void DrawOutlineText(float x, float y, Vector4 color, Vector4 outlineColor, string text,
+			int thickness)
 		{
 			var mat = new[] {new[] {1, 1}, new[] {1, -1}, new[] {-1, 1}, new[] {-1, -1}};
 
@@ -51,10 +52,53 @@ namespace SideHUDPlugin.Interface
 			ImGui.TextColored(color, text);
 		}
 
+		private void DrawBar(Vector2 cursorPos, float offsetX, float scale, Vector4 color, bool isRight)
+		{
+			var offset = isRight ? offsetX : -offsetX;
+			ImGui.SetCursorPos(new Vector2(cursorPos.X + offset, cursorPos.Y));
+
+			ImGui.Image(_pluginConfiguration.BarBackgroundImage.ImGuiHandle,
+				new Vector2(_pluginConfiguration.BarBackgroundImage.Width * _pluginConfiguration.Scale,
+					_pluginConfiguration.BarBackgroundImage.Height * _pluginConfiguration.Scale),
+				isRight ? Vector2.Zero : Vector2.One, isRight ? Vector2.One : Vector2.Zero,
+				_pluginConfiguration.BgColorAlpha);
+			ImGui.SetCursorPos(new Vector2(cursorPos.X + offset,
+				cursorPos.Y + _pluginConfiguration.BarImage.Height * _pluginConfiguration.Scale * (1f - scale)));
+			ImGui.Image(_pluginConfiguration.BarImage.ImGuiHandle,
+				new Vector2(_pluginConfiguration.BarImage.Width * _pluginConfiguration.Scale,
+					_pluginConfiguration.BarImage.Height * scale * _pluginConfiguration.Scale),
+				isRight ? new Vector2(0f, 1f - scale) : new Vector2(1f, scale),
+				isRight ? Vector2.One : Vector2.Zero, color);
+			ImGui.SetCursorPos(new Vector2(cursorPos.X + offset, cursorPos.Y));
+			ImGui.Image(_pluginConfiguration.BarCastBackgroundImage.ImGuiHandle,
+				new Vector2(_pluginConfiguration.BarCastBackgroundImage.Width * _pluginConfiguration.Scale,
+					_pluginConfiguration.BarCastBackgroundImage.Height * _pluginConfiguration.Scale),
+				isRight ? Vector2.Zero : Vector2.One, isRight ? Vector2.One : Vector2.Zero,
+				_pluginConfiguration.BgColorAlpha);
+		}
+
+		private void DrawCastBar(Vector2 cursorPos, float offsetX, float scale, Vector4 color, bool isRight,
+			bool isYFlipped)
+		{
+			var offset = isRight ? offsetX : -offsetX;
+			ImGui.SetCursorPos(new Vector2(cursorPos.X + offset,
+				isYFlipped
+					? cursorPos.Y + _pluginConfiguration.BarCastImage.Height * _pluginConfiguration.Scale *
+					(1f - scale)
+					: cursorPos.Y));
+			ImGui.Image(_pluginConfiguration.BarCastImage.ImGuiHandle, new Vector2(
+					_pluginConfiguration.BarCastImage.Width * _pluginConfiguration.Scale,
+					_pluginConfiguration.BarCastImage.Height * scale * _pluginConfiguration.Scale),
+				isRight ? isYFlipped ? new Vector2(0f, 1f + scale) : Vector2.Zero
+				: isYFlipped ? new Vector2(1f, scale) : Vector2.One,
+				isRight ? isYFlipped ? Vector2.One : new Vector2(1f, scale)
+				: isYFlipped ? Vector2.Zero : new Vector2(0f, 1f + scale), color);
+		}
+
 		public unsafe void Draw()
 		{
 			if (!IsVisible || _pluginConfiguration.HideHud ||
-			    (_pluginConfiguration.HideCombat && !_pluginInterface.ClientState.Condition[ConditionFlag.InCombat])) 
+			    (_pluginConfiguration.HideCombat && !_pluginInterface.ClientState.Condition[ConditionFlag.InCombat]))
 			{
 				return;
 			}
@@ -133,80 +177,27 @@ namespace SideHUDPlugin.Interface
 			var cursorPos = new Vector2(viewportSize.X / 2f + _pluginConfiguration.Offset.X,
 				viewportSize.Y / 2f + _pluginConfiguration.Offset.Y -
 				(_pluginConfiguration.BarImage.Height / 2f + 100f) * _pluginConfiguration.Scale);
-			var imageWidth = (_pluginConfiguration.BarImage.Width + _pluginConfiguration.BarGap) * _pluginConfiguration.Scale;
+			var imageWidth = (_pluginConfiguration.BarImage.Width + _pluginConfiguration.BarGap) *
+			                 _pluginConfiguration.Scale;
 
 			// Left bar
-
-			ImGui.SetCursorPos(new Vector2(cursorPos.X - imageWidth, cursorPos.Y));
-
-			ImGui.Image(_pluginConfiguration.BarBackgroundImage.ImGuiHandle,
-				new Vector2(_pluginConfiguration.BarBackgroundImage.Width * _pluginConfiguration.Scale, _pluginConfiguration.BarBackgroundImage.Height * _pluginConfiguration.Scale),
-				Vector2.One,
-				Vector2.Zero, _pluginConfiguration.BgColorAlpha);
-			ImGui.SetCursorPos(new Vector2(cursorPos.X - imageWidth,
-				cursorPos.Y + _pluginConfiguration.BarImage.Height * _pluginConfiguration.Scale * (1f - leftBarScale)));
-			ImGui.Image(_pluginConfiguration.BarImage.ImGuiHandle,
-				new Vector2(_pluginConfiguration.BarImage.Width * _pluginConfiguration.Scale,
-					_pluginConfiguration.BarImage.Height * leftBarScale * _pluginConfiguration.Scale),
-				new Vector2(1f, leftBarScale), Vector2.Zero, leftBarColor);
-			ImGui.SetCursorPos(new Vector2(cursorPos.X - imageWidth, cursorPos.Y));
-			ImGui.Image(_pluginConfiguration.BarCastBackgroundImage.ImGuiHandle,
-				new Vector2(_pluginConfiguration.BarCastBackgroundImage.Width * _pluginConfiguration.Scale,
-					_pluginConfiguration.BarCastBackgroundImage.Height * _pluginConfiguration.Scale),
-				Vector2.One,
-				Vector2.Zero, _pluginConfiguration.BgColorAlpha);
+			DrawBar(cursorPos, imageWidth, leftBarScale, leftBarColor, false);
 
 			// Right bar
-			
-			ImGui.SetCursorPos(new Vector2(cursorPos.X + _pluginConfiguration.BarGap * _pluginConfiguration.Scale,
-				cursorPos.Y));
+			DrawBar(cursorPos, _pluginConfiguration.BarGap * _pluginConfiguration.Scale, rightBarScale, rightBarColor,
+				true);
 
-			ImGui.Image(_pluginConfiguration.BarBackgroundImage.ImGuiHandle,
-				new Vector2(_pluginConfiguration.BarBackgroundImage.Width * _pluginConfiguration.Scale, _pluginConfiguration.BarBackgroundImage.Height * _pluginConfiguration.Scale),
-				Vector2.Zero,
-				Vector2.One, _pluginConfiguration.BgColorAlpha);
-
-			ImGui.SetCursorPos(new Vector2(cursorPos.X + _pluginConfiguration.BarGap * _pluginConfiguration.Scale,
-				cursorPos.Y + _pluginConfiguration.BarImage.Height * _pluginConfiguration.Scale * (1f - rightBarScale)));
-			ImGui.Image(_pluginConfiguration.BarImage.ImGuiHandle,
-				new Vector2(_pluginConfiguration.BarImage.Width * _pluginConfiguration.Scale,
-					_pluginConfiguration.BarImage.Height * rightBarScale * _pluginConfiguration.Scale), new Vector2(0f, 1f - rightBarScale),
-				Vector2.One, rightBarColor);
-			ImGui.SetCursorPos(new Vector2(cursorPos.X + _pluginConfiguration.BarGap * _pluginConfiguration.Scale,
-				cursorPos.Y));
-			ImGui.Image(_pluginConfiguration.BarCastBackgroundImage.ImGuiHandle,
-				new Vector2(_pluginConfiguration.BarCastBackgroundImage.Width * _pluginConfiguration.Scale,
-					_pluginConfiguration.BarCastBackgroundImage.Height * _pluginConfiguration.Scale),
-				Vector2.Zero,
-				Vector2.One, _pluginConfiguration.BgColorAlpha);
 
 			var cursorY = ImGui.GetCursorPosY();
 			var shieldScale = *(int*) (actor.Address + 0x1997) / 100f;
 
-			if (_pluginConfiguration.FlipCastBar)
-			{
-				// Shield
-				ImGui.SetCursorPos(new Vector2(
-					cursorPos.X + _pluginConfiguration.BarGap * _pluginConfiguration.Scale, cursorPos.Y));
+			// Shield
+			DrawCastBar(cursorPos,
+				_pluginConfiguration.FlipCastBar
+					? _pluginConfiguration.BarGap * _pluginConfiguration.Scale
+					: imageWidth, shieldScale, _pluginConfiguration.ShieldColorAlpha, _pluginConfiguration.FlipCastBar,
+				false);
 
-				ImGui.Image(_pluginConfiguration.BarCastImage.ImGuiHandle,
-					new Vector2(_pluginConfiguration.BarCastImage.Width * _pluginConfiguration.Scale,
-						_pluginConfiguration.BarCastImage.Height * shieldScale * _pluginConfiguration.Scale),
-					Vector2.Zero, new Vector2(1f, shieldScale),
-					_pluginConfiguration.ShieldColorAlpha);
-			}
-			else
-			{
-				// Shield
-				ImGui.SetCursorPos(new Vector2(cursorPos.X - imageWidth, cursorPos.Y));
-
-				ImGui.Image(_pluginConfiguration.BarCastImage.ImGuiHandle,
-					new Vector2(_pluginConfiguration.BarCastImage.Width * _pluginConfiguration.Scale,
-						_pluginConfiguration.BarCastImage.Height * shieldScale * _pluginConfiguration.Scale),
-					Vector2.One, new Vector2(0f, 1f + shieldScale),
-					_pluginConfiguration.ShieldColorAlpha);
-			}
-			
 			// Cast bar
 
 			var castBar = (AddonCastBar*) _pluginInterface.Framework.Gui.GetUiObjectByName("_CastBar", 1);
@@ -217,7 +208,7 @@ namespace SideHUDPlugin.Interface
 				var castScale = castBar->CastPercent / 100;
 				var castTime = ((_pluginConfiguration.CastTimeUp ? 0 : castBar->CastTime) -
 				                castBar->CastTime * castScale) / 100;
-				var slideCastScale = _pluginConfiguration.SlidecastTime / 10f / castBar->CastTime; 
+				var slideCastScale = _pluginConfiguration.SlidecastTime / 10f / castBar->CastTime;
 				var castSign = _pluginConfiguration.CastTimeUp ? "" : "−";
 				var castString = $"{castBar->CastName.GetString()}\n{castSign} {Math.Abs(castTime):F}";
 				var castStringSize = ImGui.CalcTextSize(castString);
@@ -239,59 +230,37 @@ namespace SideHUDPlugin.Interface
 				{
 					DrawOutlineText(
 						cursorPos.X - castStringSize.X / 2 - _pluginConfiguration.BarGap * _pluginConfiguration.Scale,
-						cursorPos.Y - castStringSize.Y, _pluginConfiguration.CastColorAlpha, _pluginConfiguration.OutlineColorAlpha, castString, 2);
+						cursorPos.Y - castStringSize.Y, _pluginConfiguration.CastColorAlpha,
+						_pluginConfiguration.OutlineColorAlpha, castString, 2);
 
-					ImGui.SetCursorPos(new Vector2(cursorPos.X - imageWidth,
-						cursorPos.Y + _pluginConfiguration.BarCastImage.Height * _pluginConfiguration.Scale * (1f - castScale)));
-
-					ImGui.Image(_pluginConfiguration.BarCastImage.ImGuiHandle,
-						new Vector2(_pluginConfiguration.BarCastImage.Width * _pluginConfiguration.Scale,
-							_pluginConfiguration.BarCastImage.Height * castScale * _pluginConfiguration.Scale),
-						new Vector2(1f, castScale), Vector2.Zero,
+					DrawCastBar(cursorPos, imageWidth, castScale,
 						interrupted
 							? _pluginConfiguration.CastInterruptColorAlpha
-							: _pluginConfiguration.CastColorAlpha);
+							: _pluginConfiguration.CastColorAlpha, false, true);
 
 					// Slidecast
 					if (_pluginConfiguration.ShowSlidecast)
 					{
-						ImGui.SetCursorPos(new Vector2(cursorPos.X - imageWidth, cursorPos.Y));
-
-						ImGui.Image(_pluginConfiguration.BarCastImage.ImGuiHandle,
-							new Vector2(_pluginConfiguration.BarCastImage.Width * _pluginConfiguration.Scale,
-								_pluginConfiguration.BarCastImage.Height * slideCastScale * _pluginConfiguration.Scale),
-							Vector2.One, new Vector2(0f, 1f + slideCastScale),
-							_pluginConfiguration.SlidecastColorAlpha);
+						DrawCastBar(cursorPos, imageWidth, slideCastScale, _pluginConfiguration.SlidecastColorAlpha,
+							false, false);
 					}
 				}
 				else
 				{
 					DrawOutlineText(cursorPos.X + _pluginConfiguration.BarGap * _pluginConfiguration.Scale,
-						cursorPos.Y - castStringSize.Y, _pluginConfiguration.CastColorAlpha, _pluginConfiguration.OutlineColorAlpha, castString, 2);
+						cursorPos.Y - castStringSize.Y, _pluginConfiguration.CastColorAlpha,
+						_pluginConfiguration.OutlineColorAlpha, castString, 2);
 
-					ImGui.SetCursorPos(new Vector2(
-						cursorPos.X + _pluginConfiguration.BarGap * _pluginConfiguration.Scale,
-						cursorPos.Y + _pluginConfiguration.BarCastImage.Height * _pluginConfiguration.Scale * (1f - castScale)));
-
-					ImGui.Image(_pluginConfiguration.BarCastImage.ImGuiHandle,
-						new Vector2(_pluginConfiguration.BarCastImage.Width * _pluginConfiguration.Scale,
-							_pluginConfiguration.BarCastImage.Height * castScale * _pluginConfiguration.Scale),
-						new Vector2(0f, 1f - castScale), Vector2.One,
+					DrawCastBar(cursorPos, _pluginConfiguration.BarGap * _pluginConfiguration.Scale, castScale,
 						interrupted
 							? _pluginConfiguration.CastInterruptColorAlpha
-							: _pluginConfiguration.CastColorAlpha);
+							: _pluginConfiguration.CastColorAlpha, true, true);
 
 					// Slidecast
 					if (_pluginConfiguration.ShowSlidecast)
 					{
-						ImGui.SetCursorPos(new Vector2(
-							cursorPos.X + _pluginConfiguration.BarGap * _pluginConfiguration.Scale, cursorPos.Y));
-
-						ImGui.Image(_pluginConfiguration.BarCastImage.ImGuiHandle,
-							new Vector2(_pluginConfiguration.BarCastImage.Width * _pluginConfiguration.Scale,
-								_pluginConfiguration.BarCastImage.Height * slideCastScale * _pluginConfiguration.Scale),
-							Vector2.Zero, new Vector2(1f, slideCastScale),
-							_pluginConfiguration.SlidecastColorAlpha);
+						DrawCastBar(cursorPos, _pluginConfiguration.BarGap * _pluginConfiguration.Scale, slideCastScale,
+							_pluginConfiguration.SlidecastColorAlpha, true, false);
 					}
 				}
 			}
@@ -302,10 +271,10 @@ namespace SideHUDPlugin.Interface
 
 				Vector2 hpTextPos;
 				Vector2 resourceTextPos;
-				
+
 				var hpText = String.Empty;
 				var resourceText = string.Empty;
-				
+
 				var hpPercent = hpScale * 100f;
 				var resourcePercent = resourceScale * 100f;
 
