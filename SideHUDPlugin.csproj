@@ -80,6 +80,6 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="DalamudPackager" Version="1.2.1" />
+    <PackageReference Include="DalamudPackager" Version="2.1.4" />
   </ItemGroup>
 </Project>
