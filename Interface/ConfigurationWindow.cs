@@ -20,13 +20,11 @@ namespace SideHUDPlugin.Interface
 		private byte[] pathBuffer = new byte[512];
 
 		private readonly Plugin _plugin;
-		private readonly DalamudPluginInterface _pluginInterface;
 		private readonly PluginConfiguration _pluginConfiguration;
 
-		public ConfigurationWindow(Plugin plugin, DalamudPluginInterface pluginInterface, PluginConfiguration pluginConfiguration)
+		public ConfigurationWindow(Plugin plugin, PluginConfiguration pluginConfiguration)
 		{
 			_plugin = plugin;
-			_pluginInterface = pluginInterface;
 			_pluginConfiguration = pluginConfiguration;
 
 			Array.Copy(pathBuffer, Encoding.UTF8.GetBytes(_pluginConfiguration.UserStylePath), _pluginConfiguration.UserStylePath.Length);
@@ -61,7 +59,7 @@ namespace SideHUDPlugin.Interface
 					ImGuiSliderFlags.AlwaysClamp);
 				changed |= ImGui.SliderFloat("Slidecast time", ref _pluginConfiguration.SlidecastTime, 250f, 1000f, "%.0f ms",
 					ImGuiSliderFlags.AlwaysClamp);
-				changed |= ImGui.SliderFloat("Font Scale", ref _pluginConfiguration.FontScale, 0.25f, 2f, "%.2f",
+				changed |= ImGui.SliderFloat("Font Scale", ref _pluginConfiguration.FontScale, 0.25f, 4f, "%.2f",
 					ImGuiSliderFlags.AlwaysClamp);
 				changed |= ImGui.SliderFloat("Transparency", ref _pluginConfiguration.Transparency, 0f, 100f, "%.0f%%",
 					ImGuiSliderFlags.AlwaysClamp);

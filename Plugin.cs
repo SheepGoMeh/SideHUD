@@ -2,20 +2,16 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Numerics;
-using System.Reflection;
-using System.Runtime.InteropServices;
-using Dalamud.Game.ClientState.Actors.Types;
-using Dalamud.Game.ClientState.Structs;
+using Dalamud.Game.ClientState;
+using Dalamud.Game.ClientState.Conditions;
+using Dalamud.Game.ClientState.Objects;
 using Dalamud.Game.Command;
-using Dalamud.Game.Internal.Gui.Structs;
-using Dalamud.Interface;
-using Dalamud.Interface.Colors;
+using Dalamud.Game.Gui;
+using Dalamud.IoC;
+using Dalamud.Logging;
 using Dalamud.Plugin;
-using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 using ImGuiScene;
-using SideHUDPlugin.GameStructs;
 using SideHUDPlugin.Interface;
 
 namespace SideHUDPlugin
@@ -23,8 +19,14 @@ namespace SideHUDPlugin
 	public class Plugin : IDalamudPlugin
 	{
 		public string Name => "Side HUD";
+		
+		[PluginService] public static DalamudPluginInterface PluginInterface { get; private set; } = null!;
+		[PluginService] public static ClientState ClientState { get; private set; } = null!;
+		[PluginService] public static Condition Condition { get; private set; } = null!;
+		[PluginService] public static CommandManager CommandManager { get; private set; } = null!;
+		[PluginService] public static GameGui GameGui { get; private set; } = null!;
+		[PluginService] public static TargetManager TargetManager { get; private set; } = null!;
 
-		private DalamudPluginInterface _pluginInterface;
 		private PluginConfiguration _pluginConfiguration;
 		private HudWindow _hudWindowWindow;
 		private ConfigurationWindow _configurationWindow;
@@ -32,17 +34,15 @@ namespace SideHUDPlugin
 		public readonly Dictionary<string, TextureWrap[]> Styles = new Dictionary<string, TextureWrap[]>();
 		public readonly Dictionary<string, TextureWrap[]> UserStyles = new Dictionary<string, TextureWrap[]>();
 
-		public string AssemblyLocation { get; set; } = Assembly.GetExecutingAssembly().Location;
-
-		public void Initialize(DalamudPluginInterface pluginInterface)
+		public Plugin()
 		{
-			_pluginInterface = pluginInterface;
-			_pluginConfiguration = pluginInterface.GetPluginConfig() as PluginConfiguration ?? new PluginConfiguration();
+			_pluginConfiguration = (PluginConfiguration)(PluginInterface.GetPluginConfig() ?? new PluginConfiguration());
 
-			_pluginConfiguration.Init(_pluginInterface);
+			PluginInterface.UiBuilder.BuildFonts += UiBuilderOnBuildFonts;
+			PluginInterface.UiBuilder.RebuildFonts();
 
-			_hudWindowWindow = new HudWindow(_pluginInterface, _pluginConfiguration);
-			_configurationWindow = new ConfigurationWindow(this, _pluginInterface, _pluginConfiguration);
+			_hudWindowWindow = new HudWindow(_pluginConfiguration);
+			_configurationWindow = new ConfigurationWindow(this, _pluginConfiguration);
 
 			var items = new[]
 			{
@@ -53,7 +53,7 @@ namespace SideHUDPlugin
 
 			foreach (var item in items)
 			{
-				LoadStyle(item, $@"{Path.GetDirectoryName(AssemblyLocation)}\Styles", false);
+				LoadStyle(item, Path.Combine(PluginInterface.AssemblyLocation.DirectoryName!, "Styles"), false);
 			}
 
 			if (!string.IsNullOrEmpty(_pluginConfiguration.UserStylePath))
@@ -97,17 +97,30 @@ namespace SideHUDPlugin
 					Styles[_pluginConfiguration.SelectedStyle][3];
 			}
 
-			_pluginInterface.CommandManager.AddHandler("/pside", new CommandInfo(PluginCommand)
+			CommandManager.AddHandler("/pside", new CommandInfo(PluginCommand)
 			{
 				HelpMessage = "Opens configuration window",
 				ShowInHelp = true
 			});
 
-			_pluginInterface.UiBuilder.OnBuildUi += UiBuilderOnOnBuildUi;
-			_pluginInterface.UiBuilder.OnOpenConfigUi += UiBuilderOnOnOpenConfigUi;
+			PluginInterface.UiBuilder.Draw += UiBuilderOnOnBuildUi;
+			PluginInterface.UiBuilder.OpenConfigUi += UiBuilderOnOnOpenConfigUi;
 		}
 
-		public void LoadStyle(string name, string path, bool isUserStyle)
+		private unsafe void UiBuilderOnBuildFonts()
+		{
+			var fontPath = Path.Combine(PluginInterface.AssemblyLocation.DirectoryName!, "Fonts", "Miedinger W01 Regular.ttf");
+
+			ImFontConfigPtr fontConfig = ImGuiNative.ImFontConfig_ImFontConfig();
+			fontConfig.MergeMode = false;
+			fontConfig.PixelSnapH = false;
+
+			_pluginConfiguration.NumberFont = ImGui.GetIO().Fonts.AddFontFromFileTTF(fontPath, 48f, fontConfig);
+
+			fontConfig.Destroy();
+		}
+
+		private void LoadStyle(string name, string path, bool isUserStyle)
 		{
 			var fileNames = new[]
 			{
@@ -139,7 +152,7 @@ namespace SideHUDPlugin
 					return;
 				}
 				
-				images[i] = _pluginInterface.UiBuilder.LoadImage(filePath);
+				images[i] = PluginInterface.UiBuilder.LoadImage(filePath);
 
 				if (images[i] != null)
 				{
@@ -201,7 +214,7 @@ namespace SideHUDPlugin
 			_hudWindowWindow.Draw();
 		}
 		
-		private void UiBuilderOnOnOpenConfigUi(object sender, EventArgs e)
+		private void UiBuilderOnOnOpenConfigUi()
 		{
 			_configurationWindow.IsVisible = !_configurationWindow.IsVisible;
 		}
@@ -227,9 +240,10 @@ namespace SideHUDPlugin
 				item?.Dispose();
 			}
 			
-			_pluginInterface.CommandManager.RemoveHandler("/pside");
-			_pluginInterface.UiBuilder.OnBuildUi -= UiBuilderOnOnBuildUi;
-			_pluginInterface.UiBuilder.OnOpenConfigUi -= UiBuilderOnOnOpenConfigUi;
+			CommandManager.RemoveHandler("/pside");
+			PluginInterface.UiBuilder.BuildFonts -= UiBuilderOnBuildFonts;
+			PluginInterface.UiBuilder.Draw -= UiBuilderOnOnBuildUi;
+			PluginInterface.UiBuilder.OpenConfigUi -= UiBuilderOnOnOpenConfigUi;
 		}
 
 		public void Dispose()

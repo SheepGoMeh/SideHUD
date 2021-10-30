@@ -1,55 +1,24 @@
 ﻿using System;
-using System.IO;
 using System.Numerics;
-using System.Reflection;
-using System.Runtime.InteropServices;
-using Dalamud.Game.ClientState;
 using Dalamud.Interface;
-using Dalamud.Plugin;
+using Dalamud.Game.ClientState.Conditions;
+using Dalamud.Game.ClientState.Objects.Enums;
+using Dalamud.Game.ClientState.Objects.Types;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
-using ImGuiScene;
 using SideHUDPlugin.GameStructs;
+using SideHUDPlugin.ImGuiExtension;
 
 namespace SideHUDPlugin.Interface
 {
 	public class HudWindow
 	{
 		public bool IsVisible = true;
-		private readonly DalamudPluginInterface _pluginInterface;
 		private readonly PluginConfiguration _pluginConfiguration;
 
-		public HudWindow(DalamudPluginInterface pluginInterface, PluginConfiguration pluginConfiguration)
+		public HudWindow(PluginConfiguration pluginConfiguration)
 		{
-			_pluginInterface = pluginInterface;
 			_pluginConfiguration = pluginConfiguration;
-		}
-
-		private static void DrawOutlineText(float x, float y, Vector4 color, Vector4 outlineColor, string text,
-			int thickness)
-		{
-			var mat = new[] {new[] {1, 1}, new[] {1, -1}, new[] {-1, 1}, new[] {-1, -1}};
-
-			var pos = new Vector2();
-
-			while (thickness-- != 0)
-			{
-				for (var i = 0; i != mat.Length; ++i)
-				{
-					pos.X = x - mat[i][0];
-					pos.Y = y - mat[i][1];
-					ImGui.SetCursorPos(pos);
-					ImGui.TextColored(outlineColor, text);
-					mat[i][0] += mat[i][0] > 0 ? -1 : 1;
-					mat[i][1] += mat[i][1] > 0 ? -1 : 1;
-				}
-			}
-
-			pos.X = x;
-			pos.Y = y;
-
-			ImGui.SetCursorPos(pos);
-			ImGui.TextColored(color, text);
 		}
 
 		private void DrawBar(Vector2 cursorPos, float offsetX, float scale, Vector4 color, bool isRight)
@@ -95,19 +64,72 @@ namespace SideHUDPlugin.Interface
 				: isYFlipped ? Vector2.Zero : new Vector2(0f, 1f + scale), color);
 		}
 
-		public unsafe void Draw()
+		private void DrawTargetInfo(BattleChara actor, Vector2 cursorPos, float castScale, float offsetX, string actionName,
+			string interruptedText, bool drawCast, bool castInterrupted, bool castInterruptible, bool isRight)
 		{
-			if (!IsVisible || _pluginConfiguration.HideHud ||
-			    (_pluginConfiguration.HideCombat && !_pluginInterface.ClientState.Condition[ConditionFlag.InCombat]))
+			var hpScale = (float) actor.CurrentHp / actor.MaxHp * 100f;
+			DrawBar(cursorPos, offsetX, hpScale / 100f,
+				_pluginConfiguration.HpColorAlpha, isRight);
+			
+			var actorName = $"{actor.Name}\n({hpScale:F2})%";
+
+			var actorNameSize = TextExtension.CalcTextSize(actorName,
+				_pluginConfiguration.FontScale * _pluginConfiguration.Scale);
+
+			TextExtension.DrawOutlineText(
+				new Vector2(isRight ? cursorPos.X + _pluginConfiguration.BarImage.Width * _pluginConfiguration.Scale + offsetX + actorNameSize.Y : cursorPos.X - offsetX - actorNameSize.Y,
+					cursorPos.Y + _pluginConfiguration.BarBackgroundImage.Height / 2f * _pluginConfiguration.Scale -
+					actorNameSize.X / 2f),
+				_pluginConfiguration.CastTextColorAlpha, _pluginConfiguration.CastTextOutlineColorAlpha,
+				actorName, _pluginConfiguration.FontScale * _pluginConfiguration.Scale, 2, true, isRight);
+
+			if (!drawCast)
 			{
 				return;
 			}
 
-			var actor = _pluginInterface.ClientState.LocalPlayer;
+			var castStringSize =
+				TextExtension.CalcTextSize(actionName, _pluginConfiguration.FontScale * _pluginConfiguration.Scale);
+
+			TextExtension.DrawOutlineText(
+				new Vector2(isRight ? cursorPos.X + _pluginConfiguration.BarImage.Width * _pluginConfiguration.Scale + offsetX + actorNameSize.Y + castStringSize.Y: cursorPos.X - offsetX - actorNameSize.Y - castStringSize.Y,
+					cursorPos.Y + _pluginConfiguration.BarBackgroundImage.Height / 2f * _pluginConfiguration.Scale -
+					castStringSize.X / 2f),
+				_pluginConfiguration.CastTextColorAlpha, _pluginConfiguration.CastTextOutlineColorAlpha,
+				actionName, _pluginConfiguration.FontScale * _pluginConfiguration.Scale, 2, true, isRight);
+
+			if (castInterrupted)
+			{
+				var castInterruptedStringSize = TextExtension.CalcTextSize(interruptedText,
+					_pluginConfiguration.FontScale * _pluginConfiguration.Scale);
+
+				TextExtension.DrawOutlineText(
+					new Vector2(isRight ? cursorPos.X + _pluginConfiguration.BarImage.Width * _pluginConfiguration.Scale + offsetX + actorNameSize.Y + castStringSize.Y + castInterruptedStringSize.Y : cursorPos.X - offsetX - actorNameSize.Y - castStringSize.Y - castInterruptedStringSize.Y,
+						cursorPos.Y + _pluginConfiguration.BarBackgroundImage.Height / 2f * _pluginConfiguration.Scale -
+						castInterruptedStringSize.X / 2f),
+					_pluginConfiguration.CastTextColorAlpha, _pluginConfiguration.CastTextOutlineColorAlpha,
+					interruptedText, _pluginConfiguration.FontScale * _pluginConfiguration.Scale, 2, true, isRight);
+			}
+
+			DrawCastBar(cursorPos, offsetX, castScale,
+				castInterrupted ? _pluginConfiguration.CastInterruptColorAlpha :
+				castInterruptible ? _pluginConfiguration.CastInterruptColorAlpha : _pluginConfiguration.CastColorAlpha,
+				isRight, true);
+		}
+		
+		public unsafe void Draw()
+		{
+			if (!IsVisible || _pluginConfiguration.HideHud ||
+			    (_pluginConfiguration.HideCombat && !Plugin.Condition[ConditionFlag.InCombat]))
+			{
+				return;
+			}
+
+			var actor = Plugin.ClientState.LocalPlayer;
 			var parameterWidget =
-				(AtkUnitBase*) _pluginInterface.Framework.Gui.GetUiObjectByName("_ParameterWidget", 1);
+				(AtkUnitBase*) Plugin.GameGui.GetAddonByName("_ParameterWidget", 1);
 			var fadeMiddleWidget =
-				(AtkUnitBase*) _pluginInterface.Framework.Gui.GetUiObjectByName("FadeMiddle", 1);
+				(AtkUnitBase*) Plugin.GameGui.GetAddonByName("FadeMiddle", 1);
 
 			// Display HUD only if parameter widget is visible and we're not in a fade event
 			if (actor == null || parameterWidget == null || fadeMiddleWidget == null || !parameterWidget->IsVisible ||
@@ -115,7 +137,7 @@ namespace SideHUDPlugin.Interface
 			{
 				return;
 			}
-
+			
 			var viewportSize = ImGui.GetMainViewport().Size;
 			ImGuiHelpers.ForceNextWindowMainViewport();
 			ImGui.SetNextWindowPos(Vector2.Zero);
@@ -128,7 +150,7 @@ namespace SideHUDPlugin.Interface
 			}
 
 			var hpScale = (float) actor.CurrentHp / actor.MaxHp;
-			int resourceValue;
+			uint resourceValue;
 			float resourceScale;
 			Vector4 resourceColor;
 
@@ -172,7 +194,7 @@ namespace SideHUDPlugin.Interface
 				leftBarColor = _pluginConfiguration.HpColorAlpha;
 			}
 
-			ImGui.SetWindowFontScale(2.4f * _pluginConfiguration.FontScale * _pluginConfiguration.Scale);
+			//ImGui.SetWindowFontScale(2.4f * _pluginConfiguration.FontScale * _pluginConfiguration.Scale);
 
 			var cursorPos = new Vector2(viewportSize.X / 2f + _pluginConfiguration.Offset.X,
 				viewportSize.Y / 2f + _pluginConfiguration.Offset.Y -
@@ -180,13 +202,131 @@ namespace SideHUDPlugin.Interface
 			var imageWidth = (_pluginConfiguration.BarImage.Width + _pluginConfiguration.BarGap) *
 			                 _pluginConfiguration.Scale;
 
+			// ImGui.PushFont(_pluginConfiguration.NumberFont);
+			// TextExtension.DrawText($"Font Size: {ImGui.GetFont().FontSize} Font Size Scale: {ImGui.GetFont().FontSize * _pluginConfiguration.FontScale * _pluginConfiguration.Scale}", .33f, cursorPos, _pluginConfiguration.HpTextColorAlpha, true, true);
+			// ImGui.PopFont();
+
 			// Left bar
 			DrawBar(cursorPos, imageWidth, leftBarScale, leftBarColor, false);
 
 			// Right bar
 			DrawBar(cursorPos, _pluginConfiguration.BarGap * _pluginConfiguration.Scale, rightBarScale, rightBarColor,
 				true);
+			
+			if (Plugin.TargetManager.Target is BattleChara { ObjectKind: ObjectKind.Player or ObjectKind.BattleNpc } targetActor)
+			{
+				var drawCast = false;
+				var castScale = 0f;
+				var actionName = string.Empty;
+				var castInterrupted = false;
+				var castInterruptible = false;
+				var interruptedText = string.Empty;
 
+				var targetInfoWidget =
+					(AtkUnitBase*) Plugin.GameGui.GetAddonByName("_TargetInfo", 1);
+				var targetInfoCastBarWidget =
+					(AtkUnitBase*) Plugin.GameGui.GetAddonByName("_TargetInfoCastBar", 1);
+
+				if (targetInfoWidget != null && targetInfoWidget->IsVisible && targetInfoWidget->UldManager.NodeList != null)
+				{
+					for (var i = 0; i != targetInfoWidget->UldManager.NodeListCount; ++i)
+					{
+						var node = targetInfoWidget->UldManager.NodeList[i];
+
+						switch (node->NodeID)
+						{
+							case 11: // Interrupted text
+								castInterrupted = node->IsVisible;
+								interruptedText = ((AtkTextNode*) node)->NodeText.GetString();
+								break;
+							case 12: // Action name
+								drawCast = node->IsVisible;
+								actionName = ((AtkTextNode*) node)->NodeText.GetString();
+								break;
+							case 13: // Action cast image (Used for scale)
+								drawCast = node->IsVisible;
+								castScale = node->ScaleX;
+								break;
+							case 14: // Interruptible cast image
+								castInterruptible = node->IsVisible;
+								break;
+						}
+					}
+				}
+				
+				if (targetInfoCastBarWidget != null && targetInfoCastBarWidget->IsVisible && targetInfoCastBarWidget->UldManager.NodeList != null)
+				{
+					for (var i = 0; i != targetInfoCastBarWidget->UldManager.NodeListCount; ++i)
+					{
+						var node = targetInfoCastBarWidget->UldManager.NodeList[i];
+
+						switch (node->NodeID)
+						{
+							case 3: // Interrupted text
+								castInterrupted = node->IsVisible;
+								interruptedText = ((AtkTextNode*) node)->NodeText.GetString();
+								break;
+							case 4: // Action name
+								drawCast = node->IsVisible;
+								actionName = ((AtkTextNode*) node)->NodeText.GetString();
+								break;
+							case 5: // Action cast image (Used for scale)
+								drawCast = node->IsVisible;
+								castScale = node->ScaleX;
+								break;
+							case 6: // Interruptible cast image
+								castInterruptible = node->IsVisible;
+								break;
+						}
+					}
+				}
+
+				DrawTargetInfo(targetActor, cursorPos, castScale, imageWidth + 50f, actionName, interruptedText,
+					drawCast, castInterrupted, castInterruptible, false);
+			}
+			
+			if (Plugin.TargetManager.FocusTarget is BattleChara { ObjectKind: ObjectKind.Player or ObjectKind.BattleNpc } focusTargetActor)
+			{
+				var drawCast = false;
+				var castScale = 0f;
+				var actionName = string.Empty;
+				var castInterrupted = false;
+				var castInterruptible = false;
+				var interruptedText = string.Empty;
+
+				var focusTargetInfoWidget =
+					(AtkUnitBase*) Plugin.GameGui.GetAddonByName("_FocusTargetInfo", 1);
+
+				if (focusTargetInfoWidget != null && focusTargetInfoWidget->IsVisible && focusTargetInfoWidget->UldManager.NodeList != null)
+				{
+					for (var i = 0; i != focusTargetInfoWidget->UldManager.NodeListCount; ++i)
+					{
+						var node = focusTargetInfoWidget->UldManager.NodeList[i];
+
+						switch (node->NodeID)
+						{
+							case 4: // Interrupted text
+								castInterrupted = node->IsVisible;
+								interruptedText = ((AtkTextNode*) node)->NodeText.GetString();
+								break;
+							case 5: // Action name
+								drawCast = node->IsVisible;
+								actionName = ((AtkTextNode*) node)->NodeText.GetString();
+								break;
+							case 6: // Action cast image (Used for scale)
+								drawCast = node->IsVisible;
+								castScale = node->ScaleX;
+								break;
+							case 7: // Interruptible cast image
+								castInterruptible = node->IsVisible;
+								break;
+						}
+					}
+				}
+
+				DrawTargetInfo(focusTargetActor, cursorPos, castScale, _pluginConfiguration.BarGap * _pluginConfiguration.Scale + 50f, actionName, interruptedText,
+					drawCast, castInterrupted, castInterruptible, true);
+			}
 
 			var cursorY = ImGui.GetCursorPosY();
 			var shieldScale = Math.Min(*(int*) (actor.Address + 0x1997), 100) / 100f;
@@ -197,10 +337,12 @@ namespace SideHUDPlugin.Interface
 					? _pluginConfiguration.BarGap * _pluginConfiguration.Scale
 					: imageWidth, shieldScale, _pluginConfiguration.ShieldColorAlpha, _pluginConfiguration.FlipCastBar,
 				false);
+			
+			ImGui.PushFont(_pluginConfiguration.NumberFont);
 
 			// Cast bar
 
-			var castBar = (AddonCastBar*) _pluginInterface.Framework.Gui.GetUiObjectByName("_CastBar", 1);
+			var castBar = (AddonCastBar*) Plugin.GameGui.GetAddonByName("_CastBar", 1);
 
 			if (castBar != null && castBar->AtkUnitBase.UldManager.NodeList != null &&
 			    castBar->AtkUnitBase.UldManager.NodeListCount > 11 && castBar->AtkUnitBase.IsVisible)
@@ -209,9 +351,9 @@ namespace SideHUDPlugin.Interface
 				var castTime = ((_pluginConfiguration.CastTimeUp ? 0 : castBar->CastTime) -
 				                castBar->CastTime * castScale) / 100;
 				var slideCastScale = _pluginConfiguration.SlidecastTime / 10f / castBar->CastTime;
-				var castSign = _pluginConfiguration.CastTimeUp ? "" : "−";
+				var castSign = _pluginConfiguration.CastTimeUp ? "" : "-";
 				var castString = $"{castBar->CastName.GetString()}\n{castSign} {Math.Abs(castTime):F}";
-				var castStringSize = ImGui.CalcTextSize(castString);
+				var castStringSize = TextExtension.CalcTextSize(castString, _pluginConfiguration.FontScale * _pluginConfiguration.Scale);
 
 				var interrupted = false;
 
@@ -228,10 +370,12 @@ namespace SideHUDPlugin.Interface
 
 				if (_pluginConfiguration.FlipCastBar)
 				{
-					DrawOutlineText(
-						cursorPos.X - castStringSize.X / 2 - _pluginConfiguration.BarGap * _pluginConfiguration.Scale,
-						cursorPos.Y - castStringSize.Y, _pluginConfiguration.CastTextColorAlpha,
-						_pluginConfiguration.CastTextOutlineColorAlpha, castString, 2);
+					TextExtension.DrawOutlineText(
+						new Vector2(
+							cursorPos.X - castStringSize.X / 2 -
+							_pluginConfiguration.BarGap * _pluginConfiguration.Scale, cursorPos.Y - castStringSize.Y),
+						_pluginConfiguration.CastTextColorAlpha, _pluginConfiguration.CastTextOutlineColorAlpha,
+						castString, _pluginConfiguration.FontScale * _pluginConfiguration.Scale, 2);
 
 					DrawCastBar(cursorPos, imageWidth, castScale,
 						interrupted
@@ -247,9 +391,10 @@ namespace SideHUDPlugin.Interface
 				}
 				else
 				{
-					DrawOutlineText(cursorPos.X + _pluginConfiguration.BarGap * _pluginConfiguration.Scale,
-						cursorPos.Y - castStringSize.Y, _pluginConfiguration.CastTextColorAlpha,
-						_pluginConfiguration.CastTextOutlineColorAlpha, castString, 2);
+					TextExtension.DrawOutlineText(
+						new Vector2(cursorPos.X + _pluginConfiguration.BarGap * _pluginConfiguration.Scale,
+							cursorPos.Y - castStringSize.Y), _pluginConfiguration.CastTextColorAlpha,
+						_pluginConfiguration.CastTextOutlineColorAlpha, castString, _pluginConfiguration.FontScale * _pluginConfiguration.Scale, 2);
 
 					DrawCastBar(cursorPos, _pluginConfiguration.BarGap * _pluginConfiguration.Scale, castScale,
 						interrupted
@@ -271,53 +416,94 @@ namespace SideHUDPlugin.Interface
 
 				Vector2 hpTextPos;
 				Vector2 resourceTextPos;
-
-				var hpText = string.Empty;
-				var resourceText = string.Empty;
+				Vector2 hpPercentTextPos;
+				Vector2 resourcePercentTextPos;
 
 				var hpPercent = hpScale * 100f;
 				var resourcePercent = resourceScale * 100f;
+				
+				var hpText = $"{actor.CurrentHp}";
+				var resourceText = $"{resourceValue}";
+				var hpPercentText = $"({hpPercent:F0}%)";
+				var resourcePercentText = $"({resourcePercent:F0}%)";
 
-				switch (_pluginConfiguration.ShowNumbers)
-				{
-					case true when _pluginConfiguration.ShowPercentage:
-						hpText = $"{actor.CurrentHp}\n({hpPercent:F0}%%)";
-						resourceText = $"{resourceValue}\n({resourcePercent:F0}%%)";
-						break;
-					case true:
-						hpText = $"{actor.CurrentHp}";
-						resourceText = $"{resourceValue}";
-						break;
-					default:
-						hpText = $"({hpPercent:F0}%%)";
-						resourceText = $"({resourcePercent:F0}%%)";
-						break;
-				}
+				var hpTextSize =
+					TextExtension.CalcTextSize(hpText, _pluginConfiguration.FontScale * _pluginConfiguration.Scale);
+				var hpPercentTextSize =
+					TextExtension.CalcTextSize(hpPercentText, _pluginConfiguration.FontScale * _pluginConfiguration.Scale);
+				var resourceTextSize =
+					TextExtension.CalcTextSize(resourceText, _pluginConfiguration.FontScale * _pluginConfiguration.Scale);
+				var resourcePercentTextSize =
+					TextExtension.CalcTextSize(resourcePercentText, _pluginConfiguration.FontScale * _pluginConfiguration.Scale);
 
 				if (_pluginConfiguration.FlipBars)
 				{
 					hpTextPos = new Vector2(cursorPos.X + _pluginConfiguration.BarGap * _pluginConfiguration.Scale,
 						ImGui.GetCursorPosY());
+					hpPercentTextPos =
+						new Vector2(cursorPos.X + _pluginConfiguration.BarGap * _pluginConfiguration.Scale,
+							ImGui.GetCursorPosY() + hpTextSize.Y);
 					resourceTextPos =
 						new Vector2(
-							cursorPos.X - ImGui.CalcTextSize(resourceValue.ToString()).X -
-							_pluginConfiguration.BarGap * _pluginConfiguration.Scale, ImGui.GetCursorPosY());
+							cursorPos.X - resourceTextSize.X - _pluginConfiguration.BarGap * _pluginConfiguration.Scale,
+							ImGui.GetCursorPosY());
+					resourcePercentTextPos =
+						new Vector2(
+							cursorPos.X - resourcePercentTextSize.X -
+							_pluginConfiguration.BarGap * _pluginConfiguration.Scale,
+							ImGui.GetCursorPosY() + resourceTextSize.Y);
 				}
 				else
 				{
 					hpTextPos = new Vector2(
-						cursorPos.X - ImGui.CalcTextSize(actor.CurrentHp.ToString()).X -
-						_pluginConfiguration.BarGap * _pluginConfiguration.Scale, ImGui.GetCursorPosY());
-					resourceTextPos = new Vector2(
-						cursorPos.X + _pluginConfiguration.BarGap * _pluginConfiguration.Scale,
-						ImGui.GetCursorPosY());
+						cursorPos.X - hpTextSize.X - _pluginConfiguration.BarGap * _pluginConfiguration.Scale, ImGui.GetCursorPosY());
+					hpPercentTextPos = new Vector2(
+						cursorPos.X - hpPercentTextSize.X - _pluginConfiguration.BarGap * _pluginConfiguration.Scale, ImGui.GetCursorPosY() + hpTextSize.Y);
+					resourceTextPos =
+						new Vector2(cursorPos.X + _pluginConfiguration.BarGap * _pluginConfiguration.Scale, ImGui.GetCursorPosY());
+					resourcePercentTextPos =
+						new Vector2(cursorPos.X + _pluginConfiguration.BarGap * _pluginConfiguration.Scale, ImGui.GetCursorPosY() + resourceTextSize.Y);
 				}
 
-				DrawOutlineText(hpTextPos.X, hpTextPos.Y, _pluginConfiguration.HpTextColorAlpha,
-					_pluginConfiguration.HpTextOutlineColorAlpha, hpText, 2);
+				switch (_pluginConfiguration.ShowNumbers)
+				{
+					case true when _pluginConfiguration.ShowPercentage:
+						TextExtension.DrawOutlineText(hpTextPos, _pluginConfiguration.HpTextColorAlpha,
+							_pluginConfiguration.HpTextOutlineColorAlpha, hpText,
+							_pluginConfiguration.FontScale * _pluginConfiguration.Scale, 2);
+						TextExtension.DrawOutlineText(hpPercentTextPos, _pluginConfiguration.HpTextColorAlpha,
+							_pluginConfiguration.HpTextOutlineColorAlpha, hpPercentText,
+							_pluginConfiguration.FontScale * _pluginConfiguration.Scale, 2);
+						TextExtension.DrawOutlineText(resourceTextPos, _pluginConfiguration.ResourceTextColorAlpha,
+							_pluginConfiguration.ResourceTextOutlineColorAlpha, resourceText,
+							_pluginConfiguration.FontScale * _pluginConfiguration.Scale, 2);
+						TextExtension.DrawOutlineText(resourcePercentTextPos,
+							_pluginConfiguration.ResourceTextColorAlpha,
+							_pluginConfiguration.ResourceTextOutlineColorAlpha, resourcePercentText,
+							_pluginConfiguration.FontScale * _pluginConfiguration.Scale, 2);
+						break;
+					case true:
+						TextExtension.DrawOutlineText(hpTextPos, _pluginConfiguration.HpTextColorAlpha,
+							_pluginConfiguration.HpTextOutlineColorAlpha, hpText,
+							_pluginConfiguration.FontScale * _pluginConfiguration.Scale, 2);
+						TextExtension.DrawOutlineText(resourceTextPos, _pluginConfiguration.ResourceTextColorAlpha,
+							_pluginConfiguration.ResourceTextOutlineColorAlpha, resourceText,
+							_pluginConfiguration.FontScale * _pluginConfiguration.Scale, 2);
+						break;
+					default:
+						TextExtension.DrawOutlineText(
+							new Vector2(hpPercentTextPos.X, hpPercentTextPos.Y - hpTextSize.Y),
+							_pluginConfiguration.HpTextColorAlpha, _pluginConfiguration.HpTextOutlineColorAlpha,
+							hpPercentText, _pluginConfiguration.FontScale * _pluginConfiguration.Scale, 2);
+						TextExtension.DrawOutlineText(
+							new Vector2(resourcePercentTextPos.X, resourcePercentTextPos.Y - resourceTextSize.Y),
+							_pluginConfiguration.ResourceTextColorAlpha,
+							_pluginConfiguration.ResourceTextOutlineColorAlpha, resourcePercentText,
+							_pluginConfiguration.FontScale * _pluginConfiguration.Scale, 2);
+						break;
+				}
 
-				DrawOutlineText(resourceTextPos.X, resourceTextPos.Y, _pluginConfiguration.ResourceTextColorAlpha,
-					_pluginConfiguration.ResourceTextOutlineColorAlpha, resourceText, 2);
+				ImGui.PopFont();
 			}
 
 			ImGui.End();

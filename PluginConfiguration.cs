@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Numerics;
+﻿using System.Numerics;
 using Dalamud.Configuration;
-using Dalamud.Plugin;
+using ImGuiNET;
 using ImGuiScene;
 using Newtonsoft.Json;
 
@@ -66,21 +64,16 @@ namespace SideHUDPlugin
 		public Vector3 SlidecastColor = new Vector3(0.215f, 0.980f, 0.180f);
 		public Vector3 CastInterruptColor = new Vector3(0.215f, 0.980f, 0.180f);
 
-		[JsonIgnore] private DalamudPluginInterface _pluginInterface;
+		[JsonIgnore] public ImFontPtr NumberFont { get; set; }
 
-		[JsonIgnore] public TextureWrap BarImage = null;
-		[JsonIgnore] public TextureWrap BarBackgroundImage = null;
-		[JsonIgnore] public TextureWrap BarCastImage = null;
-		[JsonIgnore] public TextureWrap BarCastBackgroundImage = null;
-
-		public void Init(DalamudPluginInterface pluginInterface)
-		{
-			_pluginInterface = pluginInterface;
-		}
+		[JsonIgnore] public TextureWrap BarImage = null!;
+		[JsonIgnore] public TextureWrap BarBackgroundImage = null!;
+		[JsonIgnore] public TextureWrap BarCastImage = null!;
+		[JsonIgnore] public TextureWrap BarCastBackgroundImage = null!;
 
 		public void Save()
 		{
-			_pluginInterface.SavePluginConfig(this);
+			Plugin.PluginInterface.SavePluginConfig(this);
 		}
 	}
 }
