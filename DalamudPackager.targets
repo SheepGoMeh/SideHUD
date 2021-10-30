@@ -8,6 +8,7 @@
                 MakeZip="true"
                 Include="
                 SideHUDPlugin.dll;
+                Fonts/Miedinger W01 Regular.ttf;
                 Styles/CleanCurves/Bar.png;
                 Styles/CleanCurves/BarBG.png;
                 Styles/CleanCurves/Cast.png;
